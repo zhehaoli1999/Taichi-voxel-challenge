@@ -2,9 +2,9 @@ from scene import Scene
 import taichi as ti
 from taichi.math import *
 scene = Scene(voxel_edges=0.01, exposure=1)
-scene.set_floor(-64, (1,1,1))
-scene.set_background_color((1.0, 1.0, 1.0))
-scene.set_directional_light((-1, 1, 0.3), 0.0, (1, 1, 1))
+scene.set_floor(-64, (1,1,1)) 
+scene.set_background_color((135/255.,206/255.,235/255.)) # sky 
+scene.set_directional_light((-1, 1, -0.5), 0.0, (1, 1, 1))
 @ti.func
 def rgb(r,g,b):
     return vec3(r/255.0, g/255.0, b/255.0)
@@ -35,7 +35,6 @@ def make(func: ti.template(), p1, p2, p3, p4, p5, p6, pos, dir, up, color, mat, 
             if mode == 0: scene.set_voxel(pos + vec3(i,j,k), mat, color) # additive
             if mode == 1: scene.set_voxel(pos + vec3(i,j,k), 0, color) # subtractive
             if mode == 2 and scene.get_voxel(pos + vec3(i,j,k))[0] > 0: scene.set_voxel(pos + vec3(i,j,k), mat, color)
-
 @ti.kernel
 def duck(x:ti.template()):
     make(elli,32.0,21.8,30.4,0.0,0.0,0.0,vec3(5,-20,-17)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,248,57),1,0)
@@ -52,32 +51,34 @@ def boat(x:ti.template()):
     make(cyli,6.1,2.1,10.5,0.1,0.0,0.0,vec3(-62,-39,1)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
     make(box,3.2,2.9,3.0,0.1,0.0,0.0,vec3(-62,-36,4)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
     make(cyli,1.2,2.4,1.5,0.1,0.0,0.0,vec3(-62,-31,5)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,36,11),1,0)
-    make(cyli,7.2,2.5,12.4,0.1,0.0,0.0,vec3(-62,-40,1)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,130,255),1,0)
+    make(cyli,7.2,2.6,12.4,0.1,0.0,0.0,vec3(-62,-40,1)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,128),1,0)
 @ti.kernel
-def sea():
+def sea():# i: left/right wing,  j: head/tail
     for i, h, j in ti.ndrange((-64, 64), (-64, -40), (-64, 64)):
-        # if i >60 :
-        #     scene.set_voxel(vec3(i, h, j), 2, rgb(0,255, 0)) # sea # green
-        # elif j >60:
-        #     scene.set_voxel(vec3(i, h, j), 2, rgb(255,0, 0)) # sea # red 
-        # else:
         scene.set_voxel(vec3(i, h, j), 1, rgb(85+2*h,205+2*h,255)) # sea
-    
-    # i: left/right wing,  j: head/tail
-    for i, h, j in ti.ndrange((-15, 62), (-40, -38), (-33, 64)):
-        if ti.random(float) > 0.9 + 0.0010 * (j+30):
-            if i < 15:
-                s = 21.8 /  32.0 
-                t = (vec3(i , h, j* s) - vec3(20,-12,-2*s) )
-                if t.dot(t) < 23:
-                    scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
-            else:
-                scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
 
-    for i, h, j in ti.ndrange((-51, -33), (-40, -38), (-12, 64)):
-        if ti.random(float) > 0.9+ 0.002 * (j+13):
+    for i, h, j in ti.ndrange((-15, 62), (-40, -38), (-38, 64)):
+        if j < 0:
+            t = (vec2(i, j) - vec2(20,-2) )
+            r = 34
+            if t.dot(t) < r**2 and ti.random(float) > 0.9:
+                scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
+        elif ti.random(float) > 0.99 - 0.003 * abs(i-20):
             scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
 
+    for i, h, j in ti.ndrange((-51, -33), (-40, -39), (-12, 64)):
+        if j < 10:
+            if j < 1:
+                s = 7.2 / 12.4
+                t = vec2((i-(-42)) *s, j-1)
+                r = 10.
+                if ti.random(float) > 0.8 and t.dot(t) < r**2:  
+                    scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
+            elif ti.random(float) > 0.8:  
+                scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
+        elif ti.random(float) > 0.85 - 0.005 * abs(i+42) + 0.0015 * (j+13):
+            scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
 
 duck(vec3(15.,-12.,15));boat(vec3(20.,0.,0.));sea()
+
 scene.finish()
