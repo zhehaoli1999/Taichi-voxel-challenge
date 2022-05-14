@@ -52,18 +52,32 @@ def boat(x:ti.template()):
     make(cyli,6.1,2.1,10.5,0.1,0.0,0.0,vec3(-62,-39,1)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
     make(box,3.2,2.9,3.0,0.1,0.0,0.0,vec3(-62,-36,4)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
     make(cyli,1.2,2.4,1.5,0.1,0.0,0.0,vec3(-62,-31,5)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,36,11),1,0)
-    make(cyli,7.2,2.2,12.4,0.1,0.0,0.0,vec3(-62,-40,1)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,130,255),1,0)
+    make(cyli,7.2,2.5,12.4,0.1,0.0,0.0,vec3(-62,-40,1)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,130,255),1,0)
 @ti.kernel
 def sea():
-    for i, j in ti.ndrange((-64, 64), (-64, 64)):
-        if max(i, j) == 63:
-            scene.set_voxel(vec3(i, -64, j), 2, rgb(255,191,255))
-        else:
-            for h in range(-64, -40):
-                scene.set_voxel(vec3(i, h, j), 1, rgb(85+h,205+h,255))
-@ti.kernel
-def wave():
-    pass
+    for i, h, j in ti.ndrange((-64, 64), (-64, -40), (-64, 64)):
+        # if i >60 :
+        #     scene.set_voxel(vec3(i, h, j), 2, rgb(0,255, 0)) # sea # green
+        # elif j >60:
+        #     scene.set_voxel(vec3(i, h, j), 2, rgb(255,0, 0)) # sea # red 
+        # else:
+        scene.set_voxel(vec3(i, h, j), 1, rgb(85+2*h,205+2*h,255)) # sea
+    
+    # i: left/right wing,  j: head/tail
+    for i, h, j in ti.ndrange((-15, 62), (-40, -38), (-33, 64)):
+        if ti.random(float) > 0.9 + 0.0010 * (j+30):
+            if i < 15:
+                s = 21.8 /  32.0 
+                t = (vec3(i , h, j* s) - vec3(20,-12,-2*s) )
+                if t.dot(t) < 23:
+                    scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
+            else:
+                scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
 
-duck(vec3(15.,-12.,15));boat(vec3(20.,0.,0.));sea();wave()
+    for i, h, j in ti.ndrange((-51, -33), (-40, -38), (-12, 64)):
+        if ti.random(float) > 0.9+ 0.002 * (j+13):
+            scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
+
+
+duck(vec3(15.,-12.,15));boat(vec3(20.,0.,0.));sea()
 scene.finish()
