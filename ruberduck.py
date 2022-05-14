@@ -2,7 +2,7 @@ from scene import Scene
 import taichi as ti
 from taichi.math import *
 scene = Scene(voxel_edges=0.01, exposure=1)
-scene.set_floor(-64, (1,1,1) )
+scene.set_floor(-64, (1,1,1))
 scene.set_background_color((1.0, 1.0, 1.0))
 scene.set_directional_light((-1, 1, 0.3), 0.0, (1, 1, 1))
 @ti.func
@@ -37,7 +37,7 @@ def make(func: ti.template(), p1, p2, p3, p4, p5, p6, pos, dir, up, color, mat, 
             if mode == 2 and scene.get_voxel(pos + vec3(i,j,k))[0] > 0: scene.set_voxel(pos + vec3(i,j,k), mat, color)
 
 @ti.kernel
-def place_duck(x:ti.template()):
+def duck(x:ti.template()):
     make(elli,32.0,21.8,30.4,0.0,0.0,0.0,vec3(5,-20,-17)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,248,57),1,0)
     make(elli,18.1,18.1,18.1,0.0,0.0,0.0,vec3(6,10,-27)+x,vec3(0.0,1.0,0.0),vec3(1.0,-0.0,-0.0),rgb(255,245,56),1,0)
     make(elli,18.1,10.3,18.1,0.0,0.0,0.0,vec3(8,-16,7)+x,vec3(-0.0,0.4,-0.9),vec3(1.0,-0.0,-0.0),rgb(255,245,56),1,0)
@@ -48,15 +48,22 @@ def place_duck(x:ti.template()):
     make(elli,2.0,2.4,2.4,0.0,0.0,0.0,vec3(15,17,-40)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,0),1,0)
     make(elli,2.0,2.4,2.4,0.0,0.0,0.0,vec3(-3,17,-39)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,0),1,0)
 @ti.kernel
-def place_boat():
-    pass
+def boat(x:ti.template()):
+    make(cyli,6.1,2.1,10.5,0.1,0.0,0.0,vec3(-62,-39,1)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
+    make(box,3.2,2.9,3.0,0.1,0.0,0.0,vec3(-62,-36,4)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
+    make(cyli,1.2,2.4,1.5,0.1,0.0,0.0,vec3(-62,-31,5)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,36,11),1,0)
+    make(cyli,7.2,2.2,12.4,0.1,0.0,0.0,vec3(-62,-40,1)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,130,255),1,0)
 @ti.kernel
-def place_ground():
+def sea():
     for i, j in ti.ndrange((-64, 64), (-64, 64)):
         if max(i, j) == 63:
-            scene.set_voxel(vec3(i, -64, j), 2, vec3(0,191,255) / 255.)
+            scene.set_voxel(vec3(i, -64, j), 2, rgb(255,191,255))
         else:
-            scene.set_voxel(vec3(i, -64, j), 1, vec3(0,191,255) / 255.)
+            for h in range(-64, -40):
+                scene.set_voxel(vec3(i, h, j), 1, rgb(85+h,205+h,255))
+@ti.kernel
+def wave():
+    pass
 
-place_duck(vec3(0.,-10.,10));place_boat();place_ground()
+duck(vec3(15.,-12.,15));boat(vec3(20.,0.,0.));sea();wave()
 scene.finish()
