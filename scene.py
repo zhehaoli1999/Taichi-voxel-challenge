@@ -124,8 +124,11 @@ class Scene:
                                  exposure=exposure)
         self.renderer.set_camera_pos(*self.camera.position)
         self.gui_pickers = []
+        self.picker_args = []
+
         self.gui_callback_buttons = []
         self.callbacks = []
+        self.callbacks_args = []
 
     @staticmethod
     @ti.func
@@ -155,15 +158,18 @@ class Scene:
     def set_background_color(self, color):
         self.renderer.background_color[None] = color
 
-    def add_slider(self, text, min, max):
+    def add_slider(self, text, old_value_ref:list, min, max):
+        # use list trick to pass mutable argument 
         self.gui_pickers.append(partial(self.window.GUI.slider_float, text=text, minimum=min, maximum=max)) 
+        self.picker_args.append(old_value_ref)
 
     def add_color_picker(self, text):
         self.gui_pickers.append(partial(self.window.GUI.color_edit_3, text=text)) 
 
-    def add_callback_button(self, text, callback_func):
+    def add_callback_button(self, text, callback_func, call_back_args_ref:tuple):
         self.gui_callback_buttons.append(partial(self.window.GUI.button,text=text))
         self.callbacks.append(callback_func)
+        self.callbacks_args.append(call_back_args_ref)
 
     def reset_scene(self):
         self.renderer.clear()
@@ -171,23 +177,19 @@ class Scene:
     def force_reset_scene(self):
         self.renderer.force_clear()
 
-    def finish(self, picker_args):
+    def finish(self):
         self.renderer.recompute_bbox()
         canvas = self.window.get_canvas()
         spp = 1
-        
-        assert(len(picker_args) == len(self.gui_pickers))
-        # assert(len(callback_args) == len(self.gui_callback_buttons))
-
         while self.window.running:
-            for i in range(len(picker_args)):
-                picker_args[i] = self.gui_pickers[i](old_value=picker_args[i])
+            for i in range(len(self.gui_pickers)):
+                self.picker_args[i][0] = self.gui_pickers[i](old_value=self.picker_args[i][0]) # use [0] to access real args 
 
             for i in range(len(self.gui_callback_buttons)):
                 trigger = self.gui_callback_buttons[i]()
                 if trigger:
                     self.reset_scene()
-                    self.callbacks[i]()
+                    self.callbacks[i](*self.callbacks_args[i])
 
             should_reset_framebuffer = False
 

@@ -4,7 +4,6 @@ from taichi.math import *
 scene = Scene(voxel_edges=0.01, exposure=1)
 scene.set_floor(-64, (1,1,1)) 
 scene.set_background_color((135/255.,206/255.,235/255.)) # sky 
-scene.set_directional_light((-1, 1, -0.5), 0.0, (1, 1, 1))
 @ti.func
 def rgb(r,g,b):
     return vec3(r/255.0, g/255.0, b/255.0)
@@ -56,7 +55,7 @@ def boat(x:ti.template()):
 p = [0.99]
 
 @ti.kernel
-def sea():# i: left/right wing,  j: head/tail
+def sea(prob:ti.f32):# i: left/right wing,  j: head/tail
     for i, h, j in ti.ndrange((-64, 64), (-64, -40), (-64, 64)):
         scene.set_voxel(vec3(i, h, j), 1, rgb(85+2*h,205+2*h,255)) # sea
         # if h > -50:
@@ -68,7 +67,7 @@ def sea():# i: left/right wing,  j: head/tail
             r = 34
             if t.dot(t) < r**2 and ti.random(float) > 0.9:
                 scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
-        elif ti.random(float) > p[0] - 0.003 * abs(i-20):
+        elif ti.random(float) > prob: #- 0.003 * abs(i-20):
             scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
 
     for i, h, j in ti.ndrange((-51, -33), (-40, -39), (-12, 64)):
@@ -84,8 +83,21 @@ def sea():# i: left/right wing,  j: head/tail
         elif ti.random(float) > 0.85 - 0.005 * abs(i+42) + 0.0015 * (j+13):
             scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
 
-duck(vec3(15.,-12.,15));boat(vec3(20.,0.,0.));sea()
+# direct_light_dir = [-1,1,-0.5]
+dir_x = [-1.];dir_y = [1.];dir_z = [-0.5]
+def relight():
+    scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1))
+def create_scene():
+    scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1))
+    scene.force_reset_scene();duck(vec3(15.,-12.,15));boat(vec3(20.,0.,0.));sea(p[0])
 
-scene.add_slider("prob", 0., 1.)
-scene.add_callback_button("re-render", sea)
-scene.finish(p)
+create_scene()
+scene.add_slider("prob", p, 0., 1.)
+scene.add_slider("direct light x",dir_x, -2., 2. )
+scene.add_slider("direct light y",dir_y, -2., 5. )
+scene.add_slider("direct light z",dir_z, -2., 2. )
+
+scene.add_callback_button("re-light", relight, ())
+scene.add_callback_button("re-wave", sea, (p[0],))
+scene.add_callback_button("re-render", create_scene, ())
+scene.finish()
