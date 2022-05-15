@@ -1,3 +1,4 @@
+from numpy import r_
 from scene import Scene
 import taichi as ti
 from taichi.math import *
@@ -52,19 +53,18 @@ def boat(x:ti.template()):
     make(cyli,1.2,2.4,1.5,0.1,0.0,0.0,vec3(-62,-31,5)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,36,11),1,0)
     make(cyli,7.2,2.6,12.4,0.1,0.0,0.0,vec3(-62,-40,1)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,128),1,0)
 
-p = [0.99]
+
 
 @ti.kernel
-def sea(prob:ti.f32):# i: left/right wing,  j: head/tail
+def sea(prob:ti.f32, scale:ti.f32,r_boat:ti.f32): # i: left/right wing,  j: head/tail
     for i, h, j in ti.ndrange((-64, 64), (-64, -40), (-64, 64)):
-        scene.set_voxel(vec3(i, h, j), 1, rgb(85+2*h,205+2*h,255)) # sea
+        scene.set_voxel(vec3(i, h, j), 1, rgb(85+2*h,205+2*h,255)) # sea base 
     for i, h, j in ti.ndrange((-15, 62), (-40, -38), (-38, 64)):
         if j < 0:
-            t = (vec2(i, j) - vec2(20,-2))
-            r = 34
+            t = (vec2(i, j) - vec2(20,-2));r = 34
             if t.dot(t) < r**2 and ti.random(float) > 0.9:
                 scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
-        elif ti.random(float) > prob - 0.003 * abs(i-20):
+        elif ti.random(float) > prob - scale * abs(i-20):
             scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
 
     for i, h, j in ti.ndrange((-51, -33), (-40, -39), (-12, 64)):
@@ -72,8 +72,7 @@ def sea(prob:ti.f32):# i: left/right wing,  j: head/tail
             if j < 1:
                 s = 7.2 / 12.4
                 t = vec2((i-(-42)) *s, j-1)
-                r = 10.
-                if ti.random(float) > 0.8 and t.dot(t) < r**2:  
+                if ti.random(float) > 0.8 and t.dot(t) < r_boat**2:  
                     scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
             elif ti.random(float) > 0.8:  
                 scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
@@ -84,21 +83,33 @@ def sea(prob:ti.f32):# i: left/right wing,  j: head/tail
 # dir_x = [-1.];dir_y = [1.5];dir_z = [-0.0]
 dir_x = [-0.5];dir_y = [1.78];dir_z = [-1.26]
 duck_x=[15.];duck_y=[-12.];duck_z=[15.]
+bx=[20.];by=[0.];bz=[0.] # boat 
+prob= [1.0];scale=[0.002];r_boat=[0.003]
 
 def relight():
-    scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1));sea(p[0])
+    scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1));sea(prob[0],scale[0],r_boat[0])
 def create_scene():
-    scene.force_reset_scene();duck(vec3(duck_x[0],duck_y[0],duck_z[0]));boat(vec3(20.,0.,0.));relight()
+    scene.force_reset_scene();duck(vec3(duck_x[0],duck_y[0],duck_z[0]));boat(vec3(bx[0],by[0],bz[0]));relight()
 
 create_scene()
-scene.add_slider("prob", p, 0., 1.)
+scene.add_text("position offset")
+scene.add_slider("duck x",duck_x,-64.,64.)
+scene.add_slider("duck y",duck_y,-64.,64.)
+scene.add_slider("duck z", duck_z,-64.,64.)
+scene.add_slider("boat x",bx, -64.,64.)
+scene.add_slider("boat y",by, -64, 64.)
+scene.add_slider("boat z",bz, -64, 64)
+
+scene.add_text("wave")
+scene.add_slider("prob",prob,0.,1.)
+scene.add_slider("scale",scale,0.,0.005)
+scene.add_slider("r boat", r_boat, 0., 30)
 
 scene.add_text("direct light")
 scene.add_slider("direct light x",dir_x, -2., 2. )
 scene.add_slider("direct light y",dir_y, -2., 5. )
 scene.add_slider("direct light z",dir_z, -2., 2. )
 
-scene.add_callback_button("re-light", relight, ())
-scene.add_callback_button("re-wave", sea, (p[0],))
-scene.add_callback_button("re-render", create_scene, ())
+scene.add_callback_button("re-light / re-wave", relight, ())
+scene.add_callback_button("reset scene", create_scene, ())
 scene.finish()
