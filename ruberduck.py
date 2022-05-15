@@ -58,16 +58,13 @@ p = [0.99]
 def sea(prob:ti.f32):# i: left/right wing,  j: head/tail
     for i, h, j in ti.ndrange((-64, 64), (-64, -40), (-64, 64)):
         scene.set_voxel(vec3(i, h, j), 1, rgb(85+2*h,205+2*h,255)) # sea
-        # if h > -50:
-        #     scene.set_voxel(vec3(i, h+1*ti.sin(0.2* float(i))*ti.sin(0.2* float(j)), j), 1, rgb(85+2*h,205+2*h,255)) # sea
-
     for i, h, j in ti.ndrange((-15, 62), (-40, -38), (-38, 64)):
         if j < 0:
-            t = (vec2(i, j) - vec2(20,-2) )
+            t = (vec2(i, j) - vec2(20,-2))
             r = 34
             if t.dot(t) < r**2 and ti.random(float) > 0.9:
                 scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
-        elif ti.random(float) > prob: #- 0.003 * abs(i-20):
+        elif ti.random(float) > prob - 0.003 * abs(i-20):
             scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
 
     for i, h, j in ti.ndrange((-51, -33), (-40, -39), (-12, 64)):
@@ -83,16 +80,20 @@ def sea(prob:ti.f32):# i: left/right wing,  j: head/tail
         elif ti.random(float) > 0.85 - 0.005 * abs(i+42) + 0.0015 * (j+13):
             scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
 
-# direct_light_dir = [-1,1,-0.5]
-dir_x = [-1.];dir_y = [1.];dir_z = [-0.5]
+# dir_x = [-1.];dir_y = [1.];dir_z = [-0.5]
+# dir_x = [-1.];dir_y = [1.5];dir_z = [-0.0]
+dir_x = [-0.5];dir_y = [1.78];dir_z = [-1.26]
+duck_x=[15.];duck_y=[-12.];duck_z=[15.]
+
 def relight():
-    scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1))
+    scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1));sea(p[0])
 def create_scene():
-    scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1))
-    scene.force_reset_scene();duck(vec3(15.,-12.,15));boat(vec3(20.,0.,0.));sea(p[0])
+    scene.force_reset_scene();duck(vec3(duck_x[0],duck_y[0],duck_z[0]));boat(vec3(20.,0.,0.));relight()
 
 create_scene()
 scene.add_slider("prob", p, 0., 1.)
+
+scene.add_text("direct light")
 scene.add_slider("direct light x",dir_x, -2., 2. )
 scene.add_slider("direct light y",dir_y, -2., 5. )
 scene.add_slider("direct light z",dir_z, -2., 2. )

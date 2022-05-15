@@ -25,8 +25,10 @@ MAT_LIGHT = 2
 class Camera:
     def __init__(self, window, up):
         self._window = window
-        self._camera_pos = np.array((0.4, 0.5, 2.0))
-        self._lookat_pos = np.array((0.0, 0.0, 0.0))
+        # self._camera_pos = np.array((0.4, 0.5, 2.0))
+        # self._lookat_pos = np.array((0.0, 0.0, 0.0))
+        self._camera_pos = np.array((-3.6, 1.57, -1.95))
+        self._lookat_pos = np.array((-1.97, 0.613, -1.03))
         self._up = np_normalize(np.array(up))
         self._last_mouse_pos = None
 
@@ -123,12 +125,9 @@ class Scene:
                                  voxel_edges=voxel_edges,
                                  exposure=exposure)
         self.renderer.set_camera_pos(*self.camera.position)
-        self.gui_pickers = []
-        self.picker_args = []
-
-        self.gui_callback_buttons = []
-        self.callbacks = []
-        self.callbacks_args = []
+        self.gui_widgets = []
+        self.gui_widget_types = []
+        self.gui_widget_args = []
 
     @staticmethod
     @ti.func
@@ -160,16 +159,24 @@ class Scene:
 
     def add_slider(self, text, old_value_ref:list, min, max):
         # use list trick to pass mutable argument 
-        self.gui_pickers.append(partial(self.window.GUI.slider_float, text=text, minimum=min, maximum=max)) 
-        self.picker_args.append(old_value_ref)
+        self.gui_widgets.append(partial(self.window.GUI.slider_float, text=text, minimum=min, maximum=max)) 
+        self.gui_widget_types.append("slider")
+        self.gui_widget_args.append(old_value_ref)
 
-    def add_color_picker(self, text):
-        self.gui_pickers.append(partial(self.window.GUI.color_edit_3, text=text)) 
+    def add_color_picker(self, old_value_ref:list, text):
+        self.gui_widgets.append(partial(self.window.GUI.color_edit_3, text=text)) 
+        self.gui_widget_types.append("color")
+        self.gui_widget_args.append(old_value_ref)
 
     def add_callback_button(self, text, callback_func, call_back_args_ref:tuple):
-        self.gui_callback_buttons.append(partial(self.window.GUI.button,text=text))
-        self.callbacks.append(callback_func)
-        self.callbacks_args.append(call_back_args_ref)
+        self.gui_widgets.append(partial(self.window.GUI.button,text=text))
+        self.gui_widget_types.append("button")
+        self.gui_widget_args.append([callback_func, call_back_args_ref])
+
+    def add_text(self, text):
+        self.gui_widgets.append(partial(self.window.GUI.text, text=text))
+        self.gui_widget_types.append("text")    
+        self.gui_widget_args.append(None)   
 
     def reset_scene(self):
         self.renderer.clear()
@@ -182,14 +189,19 @@ class Scene:
         canvas = self.window.get_canvas()
         spp = 1
         while self.window.running:
-            for i in range(len(self.gui_pickers)):
-                self.picker_args[i][0] = self.gui_pickers[i](old_value=self.picker_args[i][0]) # use [0] to access real args 
-
-            for i in range(len(self.gui_callback_buttons)):
-                trigger = self.gui_callback_buttons[i]()
-                if trigger:
-                    self.reset_scene()
-                    self.callbacks[i](*self.callbacks_args[i])
+            for i in range(len(self.gui_widgets)):
+                if self.gui_widget_types[i] in ["slider", "color"]:
+                    self.gui_widget_args[i][0] = self.gui_widgets[i](old_value=self.gui_widget_args[i][0]) # use [0] to access real args 
+                
+                if self.gui_widget_types[i] == "button":
+                    trigger = self.gui_widgets[i]()
+                    if trigger:
+                        self.reset_scene()
+                        # Here self.gui_widget_args[i] =[callback_func, call_back_args_ref]
+                        self.gui_widget_args[i][0](*self.gui_widget_args[i][1])
+                
+                if self.gui_widget_types[i] == "text":
+                    self.gui_widgets[i]()
 
             should_reset_framebuffer = False
 
@@ -198,6 +210,9 @@ class Scene:
                 look_at = self.camera.look_at
                 self.renderer.set_look_at(*look_at)
                 should_reset_framebuffer = True
+            
+            self.window.GUI.text(f"camera pos: {self.camera.position}")
+            self.window.GUI.text(f"camera lookat: {self.camera.look_at}")
 
             if should_reset_framebuffer:
                 self.renderer.reset_framebuffer()
