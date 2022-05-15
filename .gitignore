@@ -5,3 +5,7 @@ outputs
 imgui.ini
 .*.swp
 .idea
+*.jpg
+*.mp4
+img
+newimg

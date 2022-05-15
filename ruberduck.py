@@ -1,4 +1,3 @@
-from numpy import r_
 from scene import Scene
 import taichi as ti
 from taichi.math import *
@@ -23,10 +22,6 @@ def box(x, y, z, round, cone, unused, p):
     ms=min(x,min(y,z));rr=ms*round;rt=mix(cone*(max(ms-rr,0)),0,float(y-p.y)*0.5/y);q=ti.abs(p)-vec3(x-rt,y,z-rt)+rr
     return ti.max(q, 0.0).norm() + ti.min(ti.max(q.x, ti.max(q.y, q.z)), 0.0) - rr< 0
 @ti.func
-def tri(r1, h, r2, round_unused, cone, vertex, p):
-    r = vec3(p.x/r1, p.y, p.z/r2);rt=mix(1.0-cone,1.0,float(h-p.y)*0.5/h);r.z+=(r.x+1)*mix(-0.577, 0.577, vertex)
-    q = ti.abs(r); return max(q.y-h,max(q.z*0.866025+r.x*0.5,-r.x)-0.5*rt)< 0
-@ti.func
 def make(func: ti.template(), p1, p2, p3, p4, p5, p6, pos, dir, up, color, mat, mode):
     max_r = 2 * int(max(p3,max(p1, p2))); dir = normalize(dir); up = normalize(cross(cross(dir, up), dir))
     for i,j,k in ti.ndrange((-max_r,max_r),(-max_r,max_r),(-max_r,max_r)): 
@@ -34,82 +29,64 @@ def make(func: ti.template(), p1, p2, p3, p4, p5, p6, pos, dir, up, color, mat, 
         if func(p1,p2,p3,p4,p5,p6,xyz):
             if mode == 0: scene.set_voxel(pos + vec3(i,j,k), mat, color, 0) # additive
             if mode == 1: scene.set_voxel(pos + vec3(i,j,k), 0, color, 0) # subtractive
-            if mode == 2 and scene.get_voxel(pos + vec3(i,j,k))[0] > 0: scene.set_voxel(pos + vec3(i,j,k), mat, color,0 )
+            if mode == 2 and scene.get_voxel(pos + vec3(i,j,k))[0] > 0: scene.set_voxel(pos + vec3(i,j,k), mat, color,0)
 @ti.kernel
-def duck(x:ti.template()):
-    make(elli,32.0,21.8,30.4,0.0,0.0,0.0,vec3(5,-20,-17)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,248,57),1,0)
-    make(elli,18.1,18.1,18.1,0.0,0.0,0.0,vec3(6,10,-27)+x,vec3(0.0,1.0,0.0),vec3(1.0,-0.0,-0.0),rgb(255,245,56),1,0)
-    make(elli,18.1,10.3,18.1,0.0,0.0,0.0,vec3(8,-16,7)+x,vec3(-0.0,0.4,-0.9),vec3(1.0,-0.0,-0.0),rgb(255,245,56),1,0)
-    make(elli,7.6,3.6,6.4,0.0,0.0,0.0,vec3(6,13,-45)+x,vec3(-0.0,0.8,0.6),vec3(1.0,-0.1,0.1),rgb(255,128,55),1,0)
-    make(elli,7.6,3.6,6.4,0.0,0.0,0.0,vec3(6,9,-42)+x,vec3(0.0,0.9,-0.4),vec3(1.0,-0.0,0.1),rgb(255,128,55),1,0)
-    make(elli,18.1,9.1,18.1,0.0,0.0,0.0,vec3(-13,-22,-15)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,245,56),1,0)
-    make(elli,18.1,8.4,18.1,0.0,0.0,0.0,vec3(26,-22,-16)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,245,56),1,0)
-    make(elli,2.0,2.4,2.4,0.0,0.0,0.0,vec3(15,17,-40)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,0),1,0)
-    make(elli,2.0,2.4,2.4,0.0,0.0,0.0,vec3(-3,17,-39)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,0),1,0)
+def duck(v:ti.template()):
+    dv = vec3(v.x, v.y+2*(ti.random() - 0.5), v.z)
+    make(elli,32.0,21.8,30.4,0.0,0.0,0.0,vec3(5,-20,-17)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,248,57),1,0)
+    make(elli,18.1,18.1,18.1,0.0,0.0,0.0,vec3(6,10,-27)+dv,vec3(0.0,1.0,0.0),vec3(1.0,-0.0,-0.0),rgb(255,245,56),1,0)
+    make(elli,18.1,10.3,18.1,0.0,0.0,0.0,vec3(8,-16,7)+dv,vec3(-0.0,0.4,-0.9),vec3(1.0,-0.0,-0.0),rgb(255,245,56),1,0)
+    make(elli,7.6,3.6,6.4,0.0,0.0,0.0,vec3(6,13,-45)+dv,vec3(-0.0,0.8,0.6),vec3(1.0,-0.1,0.1),rgb(255,128,55),1,0)
+    make(elli,7.6,3.6,6.4,0.0,0.0,0.0,vec3(6,9,-42)+dv,vec3(0.0,0.9,-0.4),vec3(1.0,-0.0,0.1),rgb(255,128,55),1,0)
+    make(elli,18.1,9.1,18.1,0.0,0.0,0.0,vec3(-13,-22,-15)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,245,56),1,0)
+    make(elli,18.1,8.4,18.1,0.0,0.0,0.0,vec3(26,-22,-16)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,245,56),1,0)
+    make(elli,2.0,2.4,2.4,0.0,0.0,0.0,vec3(15,17,-40)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,0),1,0)
+    make(elli,2.0,2.4,2.4,0.0,0.0,0.0,vec3(-3,17,-39)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,0),1,0)
 @ti.kernel
-def boat(x:ti.template()):
-    make(cyli,6.1,2.1,10.5,0.1,0.0,0.0,vec3(-62,-39,1)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
-    make(box,3.2,2.9,3.0,0.1,0.0,0.0,vec3(-62,-36,4)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
-    make(cyli,1.2,2.4,1.5,0.1,0.0,0.0,vec3(-62,-31,5)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,36,11),1,0)
-    make(cyli,7.2,2.6,12.4,0.1,0.0,0.0,vec3(-62,-40,1)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,128),1,0)
-
-
-
-@ti.kernel
-def sea(prob:ti.f32, scale:ti.f32,r_boat:ti.f32): # i: left/right wing,  j: head/tail
+def boat(v:ti.template()):
+    dv = vec3(v.x, v.y+2*(ti.random() - 0.5), v.z)
+    make(cyli,6.1,2.1,10.5,0.1,0.0,0.0,vec3(-62,-39,1)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
+    make(box,3.2,2.9,3.0,0.1,0.0,0.0,vec3(-62,-36,4)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
+    make(cyli,1.2,2.4,1.5,0.1,0.0,0.0,vec3(-62,-31,5)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,36,11),1,0)
+    make(cyli,7.2,2.6,12.4,0.1,0.0,0.0,vec3(-62,-40,1)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,128),1,0)
+@ti.kernel 
+def sea(duck_z:ti.f32, prob:ti.f32, scale:ti.f32,r_boat:ti.f32): # i: left/right wing,  j: head/tail
     for i, h, j in ti.ndrange((-64, 64), (-64, -40), (-64, 64)):
         scene.set_voxel(vec3(i, h, j), 1, rgb(85+2*h,205+2*h,255)) # sea base 
-    for i, h, j in ti.ndrange((-15, 62), (-40, -38), (-38, 64)):
-        if j < 0:
-            t = (vec2(i, j) - vec2(20,-2));r = 34
-            if t.dot(t) < r**2 and ti.random(float) > 0.9:
-                scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
-        elif ti.random(float) > prob - scale * abs(i-20):
-            scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
-
-    for i, h, j in ti.ndrange((-51, -33), (-40, -39), (-12, 64)):
-        if j < 10:
-            if j < 1:
-                s = 7.2 / 12.4
-                t = vec2((i-(-42)) *s, j-1)
-                if ti.random(float) > 0.8 and t.dot(t) < r_boat**2:  
+    for i, h, j in ti.ndrange((-15, 62), (-40, -38), (-17+duck_z-36, 64)):
+        if scene.get_voxel(vec3(i, h, j))[0]==0:
+            if j < 0:
+                t = (vec2(i, j) - vec2(20,-17+duck_z));r = 34
+                if t.dot(t) < r**2 and ti.random(float) > 0.9:                
                     scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
-            elif ti.random(float) > 0.8:  
+            elif ti.random(float) > prob - scale * abs(i-20):
                 scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
-        elif ti.random(float) > 0.85 - 0.005 * abs(i+42) + 0.0015 * (j+13):
-            scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
-
-# dir_x = [-1.];dir_y = [1.];dir_z = [-0.5]
-# dir_x = [-1.];dir_y = [1.5];dir_z = [-0.0]
+    for i, h, j in ti.ndrange((-51, -33), (-40, -39), (-12, 64)):
+        if scene.get_voxel(vec3(i, h, j))[0]==0:
+            if j < 10:
+                if j < 1:
+                    s = 12.4 / 7.2;t = vec2((i-(-42)) *s, j-1)
+                    if ti.random(float) > 0.8 and t.dot(t) < r_boat**2:  
+                        scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
+                elif ti.random(float) > 0.8:  
+                    scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
+            elif ti.random(float) > 0.85 - 0.005 * abs(i+42) + 0.0015 * (j+13):
+                scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
 dir_x = [-0.5];dir_y = [1.78];dir_z = [-1.26]
-duck_x=[15.];duck_y=[-12.];duck_z=[15.]
+duck_x=[15.];duck_y=[-12.];duck_z=[11.2]
 bx=[20.];by=[0.];bz=[0.] # boat 
-prob= [1.0];scale=[0.002];r_boat=[0.003]
-
+prob= [1.0];scale=[0.002];r_boat=[15.4]
 def relight():
-    scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1));sea(prob[0],scale[0],r_boat[0])
+    scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1));sea(duck_z[0],prob[0],scale[0],r_boat[0])
 def create_scene():
     scene.force_reset_scene();duck(vec3(duck_x[0],duck_y[0],duck_z[0]));boat(vec3(bx[0],by[0],bz[0]));relight()
-
 create_scene()
-scene.add_text("position offset")
-scene.add_slider("duck x",duck_x,-64.,64.)
-scene.add_slider("duck y",duck_y,-64.,64.)
-scene.add_slider("duck z", duck_z,-64.,64.)
-scene.add_slider("boat x",bx, -64.,64.)
-scene.add_slider("boat y",by, -64, 64.)
-scene.add_slider("boat z",bz, -64, 64)
-
-scene.add_text("wave")
-scene.add_slider("prob",prob,0.,1.)
-scene.add_slider("scale",scale,0.,0.005)
-scene.add_slider("r boat", r_boat, 0., 30)
-
-scene.add_text("direct light")
-scene.add_slider("direct light x",dir_x, -2., 2. )
-scene.add_slider("direct light y",dir_y, -2., 5. )
-scene.add_slider("direct light z",dir_z, -2., 2. )
-
+scene.add_text("position offset");scene.add_slider("duck x",duck_x,-64.,64.);scene.add_slider("duck y",duck_y,-64.,64.)
+scene.add_slider("duck z", duck_z,-64.,64.);scene.add_slider("boat x",bx, -64.,64.);scene.add_slider("boat y",by, -64, 64.)
+scene.add_slider("boat z",bz, -64, 64);scene.add_text("wave");scene.add_slider("prob",prob,0.,1.)
+scene.add_slider("scale",scale,0.,0.005);scene.add_slider("r boat", r_boat, 0., 30)
+scene.add_text("direct light");scene.add_slider("direct light x",dir_x, -2., 2. )
+scene.add_slider("direct light y",dir_y, -2., 5. );scene.add_slider("direct light z",dir_z, -2., 2. )
 scene.add_callback_button("re-light / re-wave", relight, ())
 scene.add_callback_button("reset scene", create_scene, ())
 scene.finish()

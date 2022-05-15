@@ -27,8 +27,10 @@ class Camera:
         self._window = window
         # self._camera_pos = np.array((0.4, 0.5, 2.0))
         # self._lookat_pos = np.array((0.0, 0.0, 0.0))
-        self._camera_pos = np.array((-3.6, 1.57, -1.95))
-        self._lookat_pos = np.array((-1.97, 0.613, -1.03))
+        # self._camera_pos = np.array((-3.6, 1.57, -1.95))
+        # self._lookat_pos = np.array((-1.97, 0.613, -1.03))
+        self._camera_pos = np.array((-3.168, 0.929, -1.915))
+        self._lookat_pos = np.array((-1.50, 0.181, -0.873))
         self._up = np_normalize(np.array(up))
         self._last_mouse_pos = None
 
