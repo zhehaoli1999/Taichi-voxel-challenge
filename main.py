@@ -1,47 +1,84 @@
 from scene import Scene
 import taichi as ti
 from taichi.math import *
-
-scene = Scene(exposure=10)
-scene.set_floor(-0.8, (1.0, 1.0, 1.0))
-scene.set_background_color((1.0, 1., 1.))
-
-
-@ti.kernel
-def initialize_voxels():
-    # Your code here! :-)
-    scene.set_voxel(vec3(0, 0, 0), 2, vec3(0.9, 0.1, 0.1))
-
-@ti.kernel
-def set_ground():
-    # 1 moon 
-    # 11 stars 
-    r0 = 0.2
-    r1=0.025;r2=0.05;r3=0.05;r4=0.025;r5=0.05;r6=0.025;r7=0.1;r8=0.025;r9=0.025;r10=0.05;r11=0.05
-
-    # (left-or-right, height, front-or-back,)
-    x0 = vec3(0.7,0.6,-0.95)
-    x1= vec3(-0.9,0.,-0.9);x2=vec3(-0.8,0.8,-0.8);x3=vec3(-0.75,0.,-0.8);x4=vec3(-0.7,0.9,-0.8);x5=vec3(-0.65,0.6,-0.8)
-    x6= vec3(-0.45,0.3,-0.8);x7=vec3(-0.3,-0.1,-0.8);x8=vec3(-0.45,0.9,-0.8);x9=vec3(-0.2,0.8,-0.8);x10=vec3(0.2,0.8,-0.8)
-    x11=vec3(0.5,0.4,-0.8)
-
-    for i,j,k in ti.ndrange((-64,64), (-64,64), (-64,64)):
-        x,y,z = i / 64. , j / 64., k/64.
-        if y < -0.5 + 0.2 * ti.sin(x) + 0.2 * ti.sin(z) and y > -0.8: # set ground
-            scene.set_voxel(vec3(i,j,k),1,vec3(64, 105, 255)/255.)
-
-        set_stars(vec3(x,y,z),x1,r1,i,j,k);set_stars(vec3(x,y,z),x2,r2,i,j,k);set_stars(vec3(x,y,z),x3,r3,i,j,k)
-        set_stars(vec3(x,y,z),x4,r4,i,j,k);set_stars(vec3(x,y,z),x5,r5,i,j,k);set_stars(vec3(x,y,z),x6,r6,i,j,k)
-        set_stars(vec3(x,y,z),x7,r7,i,j,k);set_stars(vec3(x,y,z),x8,r8,i,j,k);set_stars(vec3(x,y,z),x9,r9,i,j,k)
-        set_stars(vec3(x,y,z),x10,r10,i,j,k);set_stars(vec3(x,y,z),x11,r11,i,j,k);set_stars(vec3(x,y,z),x0,r0,i,j,k)
-
+scene = Scene(voxel_edges=0.01, exposure=1)
+scene.set_floor(-64, (1,1,1)) 
+scene.set_background_color((135/255.,206/255.,235/255.)) # sky 
 @ti.func
-def set_stars(v,x,r,i,j,k):
-    v = v - x
-    if v.dot(v) < r**2 * 1.5:
-        scene.set_voxel(vec3(i, j, k), 2, vec3(0.9, 0.9, 0.3))
-
-#initialize_voxels()
-set_ground()
-
+def rgb(r,g,b):
+    return vec3(r/255.0, g/255.0, b/255.0)
+@ti.func
+def proj_plane(o, n, t, p): 
+    y = dot(p-o,n);xz=p-(o+n*y);bt=cross(t,n);return vec3(dot(xz,t), y, dot(xz, bt))
+@ti.func
+def elli(rx,ry,rz,p1_unused,p2_unused,p3_unused,p):
+    r = p/vec3(rx,ry,rz); return ti.sqrt(dot(r,r))<1
+@ti.func
+def cyli(r1,h,r2,round, cone, hole_unused, p):
+    ms=min(r1,min(h,r2));rr=ms*round;rt=mix(cone*(max(ms-rr,0)),0,float(h-p.y)*0.5/h);r=vec2(p.x/r1,p.z/r2)
+    d=vec2((r.norm()-1.0)*ms+rt,ti.abs(p.y)-h)+rr; return min(max(d.x,d.y),0.0)+max(d,0.0).norm()-rr<0
+@ti.func
+def box(x, y, z, round, cone, unused, p):
+    ms=min(x,min(y,z));rr=ms*round;rt=mix(cone*(max(ms-rr,0)),0,float(y-p.y)*0.5/y);q=ti.abs(p)-vec3(x-rt,y,z-rt)+rr
+    return ti.max(q, 0.0).norm() + ti.min(ti.max(q.x, ti.max(q.y, q.z)), 0.0) - rr< 0
+@ti.func
+def make(func: ti.template(), p1, p2, p3, p4, p5, p6, pos, dir, up, color, mat, mode):
+    max_r = 2 * int(max(p3,max(p1, p2))); dir = normalize(dir); up = normalize(cross(cross(dir, up), dir))
+    for i,j,k in ti.ndrange((-max_r,max_r),(-max_r,max_r),(-max_r,max_r)): 
+        xyz = proj_plane(vec3(0.0,0.0,0.0), dir, up, vec3(i,j,k))
+        if func(p1,p2,p3,p4,p5,p6,xyz):
+            if mode == 0: scene.set_voxel(pos + vec3(i,j,k), mat, color, 0) # additive
+            if mode == 1: scene.set_voxel(pos + vec3(i,j,k), 0, color, 0) # subtractive
+            if mode == 2 and scene.get_voxel(pos + vec3(i,j,k))[0] > 0: scene.set_voxel(pos + vec3(i,j,k), mat, color,0)
+@ti.kernel
+def duck(v:ti.template()):
+    dv = vec3(v.x, v.y+2*(ti.random() - 0.5), v.z)
+    make(elli,32.0,21.8,30.4,0.0,0.0,0.0,vec3(5,-20,-17)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,248,57),1,0)
+    make(elli,18.1,18.1,18.1,0.0,0.0,0.0,vec3(6,10,-27)+dv,vec3(0.0,1.0,0.0),vec3(1.0,-0.0,-0.0),rgb(255,245,56),1,0)
+    make(elli,18.1,10.3,18.1,0.0,0.0,0.0,vec3(8,-16,7)+dv,vec3(-0.0,0.4,-0.9),vec3(1.0,-0.0,-0.0),rgb(255,245,56),1,0)
+    make(elli,7.6,3.6,6.4,0.0,0.0,0.0,vec3(6,13,-45)+dv,vec3(-0.0,0.8,0.6),vec3(1.0,-0.1,0.1),rgb(255,128,55),1,0)
+    make(elli,7.6,3.6,6.4,0.0,0.0,0.0,vec3(6,9,-42)+dv,vec3(0.0,0.9,-0.4),vec3(1.0,-0.0,0.1),rgb(255,128,55),1,0)
+    make(elli,18.1,9.1,18.1,0.0,0.0,0.0,vec3(-13,-22,-15)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,245,56),1,0)
+    make(elli,18.1,8.4,18.1,0.0,0.0,0.0,vec3(26,-22,-16)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,245,56),1,0)
+    make(elli,2.0,2.4,2.4,0.0,0.0,0.0,vec3(15,17,-40)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,0),1,0)
+    make(elli,2.0,2.4,2.4,0.0,0.0,0.0,vec3(-3,17,-39)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,0),1,0)
+@ti.kernel
+def boat(v:ti.template()):
+    dv = vec3(v.x, v.y+2*(ti.random() - 0.5), v.z)
+    make(cyli,6.1,2.1,10.5,0.1,0.0,0.0,vec3(-62,-39,1)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
+    make(box,3.2,2.9,3.0,0.1,0.0,0.0,vec3(-62,-36,4)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
+    make(cyli,1.2,2.4,1.5,0.1,0.0,0.0,vec3(-62,-31,5)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,36,11),1,0)
+    make(cyli,7.2,2.6,12.4,0.1,0.0,0.0,vec3(-62,-40,1)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,128),1,0)
+@ti.kernel 
+def sea(duck_z:ti.f32, prob:ti.f32, scale:ti.f32,r_boat:ti.f32): # i: left/right wing,  j: head/tail
+    for i, h, j in ti.ndrange((-64, 64), (-64, -40), (-64, 64)):
+        scene.set_voxel(vec3(i, h, j), 1, rgb(85+2*h,205+2*h,255)) # sea base 
+    for i, h, j in ti.ndrange((-15, 62), (-40, -38), (-17+duck_z-36, 64)):
+        if scene.get_voxel(vec3(i, h, j))[0]==0:
+            if j < 0:
+                t = (vec2(i, j) - vec2(20,-17+duck_z));r = 34
+                if t.dot(t) < r**2 and ti.random(float) > 0.9:                
+                    scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
+            elif ti.random(float) > prob - scale * abs(i-20):
+                scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
+    for i, h, j in ti.ndrange((-51, -33), (-40, -39), (-12, 64)):
+        if scene.get_voxel(vec3(i, h, j))[0]==0:
+            if j < 10:
+                if j < 1:
+                    s = 12.4 / 7.2;t = vec2((i-(-42)) *s, j-1)
+                    if ti.random(float) > 0.8 and t.dot(t) < r_boat**2:  
+                        scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
+                elif ti.random(float) > 0.8:  
+                    scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
+            elif ti.random(float) > 0.85 - 0.005 * abs(i+42) + 0.0015 * (j+13):
+                scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
+dir_x = [-0.5];dir_y = [1.78];dir_z = [-1.26]
+duck_x=[15.];duck_y=[-12.];duck_z=[11.2]
+bx=[20.];by=[0.];bz=[0.] # boat 
+prob= [1.0];scale=[0.002];r_boat=[15.4]
+def relight():
+    scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1));sea(duck_z[0],prob[0],scale[0],r_boat[0])
+def create_scene():
+    scene.force_reset_scene();duck(vec3(duck_x[0],duck_y[0],duck_z[0]));boat(vec3(bx[0],by[0],bz[0]));relight()
+create_scene()
 scene.finish()
