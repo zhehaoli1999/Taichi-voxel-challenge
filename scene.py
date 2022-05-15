@@ -5,6 +5,7 @@ import numpy as np
 import taichi as ti
 from renderer import Renderer
 from math_utils import np_normalize, np_rotate_matrix
+from functools import partial
 
 VOXEL_DX = 1 / 64
 SCREEN_RES = (1280, 720)
@@ -121,8 +122,10 @@ class Scene:
                                  up=UP_DIR,
                                  voxel_edges=voxel_edges,
                                  exposure=exposure)
-
         self.renderer.set_camera_pos(*self.camera.position)
+        self.gui_pickers = []
+        self.gui_callback_buttons = []
+        self.callbacks = []
 
     @staticmethod
     @ti.func
@@ -134,8 +137,8 @@ class Scene:
              ti.round(idx[2])]).cast(ti.i32)
 
     @ti.func
-    def set_voxel(self, idx, mat, color):
-        self.renderer.set_voxel(self.round_idx(idx), mat, color)
+    def set_voxel(self, idx, mat, color, resetable=1):
+        self.renderer.set_voxel(self.round_idx(idx), mat, color, resetable)
 
     @ti.func
     def get_voxel(self, idx):
@@ -152,11 +155,40 @@ class Scene:
     def set_background_color(self, color):
         self.renderer.background_color[None] = color
 
-    def finish(self):
+    def add_slider(self, text, min, max):
+        self.gui_pickers.append(partial(self.window.GUI.slider_float, text=text, minimum=min, maximum=max)) 
+
+    def add_color_picker(self, text):
+        self.gui_pickers.append(partial(self.window.GUI.color_edit_3, text=text)) 
+
+    def add_callback_button(self, text, callback_func):
+        self.gui_callback_buttons.append(partial(self.window.GUI.button,text=text))
+        self.callbacks.append(callback_func)
+
+    def reset_scene(self):
+        self.renderer.clear()
+    
+    def force_reset_scene(self):
+        self.renderer.force_clear()
+
+    def finish(self, picker_args):
         self.renderer.recompute_bbox()
         canvas = self.window.get_canvas()
         spp = 1
+        
+        assert(len(picker_args) == len(self.gui_pickers))
+        # assert(len(callback_args) == len(self.gui_callback_buttons))
+
         while self.window.running:
+            for i in range(len(picker_args)):
+                picker_args[i] = self.gui_pickers[i](old_value=picker_args[i])
+
+            for i in range(len(self.gui_callback_buttons)):
+                trigger = self.gui_callback_buttons[i]()
+                if trigger:
+                    self.reset_scene()
+                    self.callbacks[i]()
+
             should_reset_framebuffer = False
 
             if self.camera.update_camera():

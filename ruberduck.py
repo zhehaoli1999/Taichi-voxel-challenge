@@ -32,9 +32,9 @@ def make(func: ti.template(), p1, p2, p3, p4, p5, p6, pos, dir, up, color, mat, 
     for i,j,k in ti.ndrange((-max_r,max_r),(-max_r,max_r),(-max_r,max_r)): 
         xyz = proj_plane(vec3(0.0,0.0,0.0), dir, up, vec3(i,j,k))
         if func(p1,p2,p3,p4,p5,p6,xyz):
-            if mode == 0: scene.set_voxel(pos + vec3(i,j,k), mat, color) # additive
-            if mode == 1: scene.set_voxel(pos + vec3(i,j,k), 0, color) # subtractive
-            if mode == 2 and scene.get_voxel(pos + vec3(i,j,k))[0] > 0: scene.set_voxel(pos + vec3(i,j,k), mat, color)
+            if mode == 0: scene.set_voxel(pos + vec3(i,j,k), mat, color, 0) # additive
+            if mode == 1: scene.set_voxel(pos + vec3(i,j,k), 0, color, 0) # subtractive
+            if mode == 2 and scene.get_voxel(pos + vec3(i,j,k))[0] > 0: scene.set_voxel(pos + vec3(i,j,k), mat, color,0 )
 @ti.kernel
 def duck(x:ti.template()):
     make(elli,32.0,21.8,30.4,0.0,0.0,0.0,vec3(5,-20,-17)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,248,57),1,0)
@@ -52,10 +52,15 @@ def boat(x:ti.template()):
     make(box,3.2,2.9,3.0,0.1,0.0,0.0,vec3(-62,-36,4)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
     make(cyli,1.2,2.4,1.5,0.1,0.0,0.0,vec3(-62,-31,5)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,36,11),1,0)
     make(cyli,7.2,2.6,12.4,0.1,0.0,0.0,vec3(-62,-40,1)+x,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,128),1,0)
+
+p = [0.99]
+
 @ti.kernel
 def sea():# i: left/right wing,  j: head/tail
     for i, h, j in ti.ndrange((-64, 64), (-64, -40), (-64, 64)):
         scene.set_voxel(vec3(i, h, j), 1, rgb(85+2*h,205+2*h,255)) # sea
+        # if h > -50:
+        #     scene.set_voxel(vec3(i, h+1*ti.sin(0.2* float(i))*ti.sin(0.2* float(j)), j), 1, rgb(85+2*h,205+2*h,255)) # sea
 
     for i, h, j in ti.ndrange((-15, 62), (-40, -38), (-38, 64)):
         if j < 0:
@@ -63,7 +68,7 @@ def sea():# i: left/right wing,  j: head/tail
             r = 34
             if t.dot(t) < r**2 and ti.random(float) > 0.9:
                 scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
-        elif ti.random(float) > 0.99 - 0.003 * abs(i-20):
+        elif ti.random(float) > p[0] - 0.003 * abs(i-20):
             scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
 
     for i, h, j in ti.ndrange((-51, -33), (-40, -39), (-12, 64)):
@@ -81,4 +86,6 @@ def sea():# i: left/right wing,  j: head/tail
 
 duck(vec3(15.,-12.,15));boat(vec3(20.,0.,0.));sea()
 
-scene.finish()
+scene.add_slider("prob", 0., 1.)
+scene.add_callback_button("re-render", sea)
+scene.finish(p)

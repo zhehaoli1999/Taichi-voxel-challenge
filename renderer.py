@@ -23,6 +23,7 @@ class Renderer:
         self.fov = ti.field(dtype=ti.f32, shape=())
         self.voxel_color = ti.Vector.field(3, dtype=ti.u8)
         self.voxel_material = ti.field(dtype=ti.i8)
+        self.voxel_resetable = ti.field(dtype=ti.i8)
 
         self.light_direction = ti.Vector.field(3, dtype=ti.f32, shape=())
         self.light_direction_noise = ti.field(dtype=ti.f32, shape=())
@@ -53,6 +54,7 @@ class Renderer:
         ti.root.dense(ti.ijk,
                       self.voxel_grid_res).place(self.voxel_color,
                                                  self.voxel_material,
+                                                 self.voxel_resetable,
                                                  offset=voxel_grid_offset)
 
         self._rendered_image = ti.Vector.field(3, float, image_res)
@@ -372,9 +374,23 @@ class Renderer:
         return r
 
     @ti.func
-    def set_voxel(self, idx, mat, color):
+    def set_voxel(self, idx, mat, color, resetable):
         self.voxel_material[idx] = ti.cast(mat, ti.i8)
         self.voxel_color[idx] = self.to_vec3u(color)
+        self.voxel_resetable[idx] = ti.cast(resetable, ti.i8)
+    
+    @ti.kernel
+    def clear(self):
+        for idx in ti.grouped(ti.ndrange(128,128,128)):
+            if self.voxel_resetable[idx] == 1:
+                self.voxel_material[idx] = ti.cast(0, ti.i8)
+                self.voxel_color[idx] = self.to_vec3u(ti.Vector([0., 0.,0.]))
+    
+    @ti.kernel
+    def force_clear(self):
+        for idx in ti.grouped(ti.ndrange(128,128,128)):
+            self.voxel_material[idx] = ti.cast(0, ti.i8)
+            self.voxel_color[idx] = self.to_vec3u(ti.Vector([0., 0.,0.]))
 
     @ti.func
     def get_voxel(self, ijk):
