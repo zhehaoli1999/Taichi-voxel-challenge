@@ -45,7 +45,7 @@ class Camera:
 
     def _update_by_mouse(self):
         win = self._window
-        if not self.mouse_exclusive_owner or not win.is_pressed(ti.ui.LMB):
+        if not self.mouse_exclusive_owner or not win.is_pressed(ti.ui.RMB):
             self._last_mouse_pos = None
             return False
         mouse_pos = np.array(win.get_cursor_pos())
@@ -201,6 +201,7 @@ class Scene:
                         self.reset_scene()
                         # Here self.gui_widget_args[i] =[callback_func, call_back_args_ref]
                         self.gui_widget_args[i][0](*self.gui_widget_args[i][1])
+                        self.renderer.reset_framebuffer()
                 
                 if self.gui_widget_types[i] == "text":
                     self.gui_widgets[i]()
