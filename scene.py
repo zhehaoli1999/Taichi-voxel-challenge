@@ -45,7 +45,7 @@ class Camera:
 
     def _update_by_mouse(self):
         win = self._window
-        if not self.mouse_exclusive_owner or not win.is_pressed(ti.ui.RMB):
+        if not self.mouse_exclusive_owner or not win.is_pressed(ti.ui.LMB):
             self._last_mouse_pos = None
             return False
         mouse_pos = np.array(win.get_cursor_pos())
@@ -130,6 +130,7 @@ class Scene:
         self.gui_widgets = []
         self.gui_widget_types = []
         self.gui_widget_args = []
+        self.is_display_camera_info = False
 
     @staticmethod
     @ti.func
@@ -186,6 +187,26 @@ class Scene:
     def force_reset_scene(self):
         self.renderer.force_clear()
 
+    def save_screeshot(self, fname):
+        self.renderer.recompute_bbox()
+        self.renderer.set_camera_pos(*self.camera.position)
+        look_at = self.camera.look_at
+        self.renderer.set_look_at(*look_at)
+        self.renderer.reset_framebuffer()
+        spp = 100
+        for _ in range(spp):
+            self.renderer.accumulate()
+        img = self.renderer.fetch_image()
+        ti.tools.image.imwrite(img, fname)
+        print(f"Screenshot has been saved to {fname}")
+
+    def display_camera_info(self):
+        self.is_display_camera_info = True
+    
+    def set_camera(self, pos:list, lookat:list):
+        self.renderer.set_camera_pos(pos[0],pos[1],pos[2])
+        self.renderer.set_look_at(lookat[0],lookat[1],lookat[2])
+
     def finish(self):
         self.renderer.recompute_bbox()
         canvas = self.window.get_canvas()
@@ -214,8 +235,9 @@ class Scene:
                 self.renderer.set_look_at(*look_at)
                 should_reset_framebuffer = True
             
-            self.window.GUI.text(f"camera pos: {self.camera.position}")
-            self.window.GUI.text(f"camera lookat: {self.camera.look_at}")
+            if self.is_display_camera_info:
+                self.window.GUI.text(f"camera pos: {self.camera.position}")
+                self.window.GUI.text(f"camera lookat: {self.camera.look_at}")
 
             if should_reset_framebuffer:
                 self.renderer.reset_framebuffer()

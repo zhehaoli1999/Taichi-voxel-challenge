@@ -31,8 +31,7 @@ def make(func: ti.template(), p1, p2, p3, p4, p5, p6, pos, dir, up, color, mat, 
             if mode == 1: scene.set_voxel(pos + vec3(i,j,k), 0, color, 0) # subtractive
             if mode == 2 and scene.get_voxel(pos + vec3(i,j,k))[0] > 0: scene.set_voxel(pos + vec3(i,j,k), mat, color,0)
 @ti.kernel
-def duck(v:ti.template()):
-    dv = vec3(v.x, v.y+2*(ti.random() - 0.5), v.z)
+def duck(dv:ti.template()):
     make(elli,32.0,21.8,30.4,0.0,0.0,0.0,vec3(5,-20,-17)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,248,57),1,0)
     make(elli,18.1,18.1,18.1,0.0,0.0,0.0,vec3(6,10,-27)+dv,vec3(0.0,1.0,0.0),vec3(1.0,-0.0,-0.0),rgb(255,245,56),1,0)
     make(elli,18.1,10.3,18.1,0.0,0.0,0.0,vec3(8,-16,7)+dv,vec3(-0.0,0.4,-0.9),vec3(1.0,-0.0,-0.0),rgb(255,245,56),1,0)
@@ -43,8 +42,7 @@ def duck(v:ti.template()):
     make(elli,2.0,2.4,2.4,0.0,0.0,0.0,vec3(15,17,-40)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,0),1,0)
     make(elli,2.0,2.4,2.4,0.0,0.0,0.0,vec3(-3,17,-39)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(0,0,0),1,0)
 @ti.kernel
-def boat(v:ti.template()):
-    dv = vec3(v.x, v.y+2*(ti.random() - 0.5), v.z)
+def boat(dv:ti.template()):
     make(cyli,6.1,2.1,10.5,0.1,0.0,0.0,vec3(-62,-39,1)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
     make(box,3.2,2.9,3.0,0.1,0.0,0.0,vec3(-62,-36,4)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,255,255),1,0)
     make(cyli,1.2,2.4,1.5,0.1,0.0,0.0,vec3(-62,-31,5)+dv,vec3(0.0,1.0,0.0),vec3(1.0,0.0,0.0),rgb(255,36,11),1,0)
@@ -78,8 +76,27 @@ bx=[20.];by=[0.];bz=[0.] # boat
 prob= [1.0];scale=[0.002];r_boat=[15.4]
 def relight():
     scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1));sea(duck_z[0],prob[0],scale[0],r_boat[0])
-def create_scene():
-    scene.force_reset_scene();duck(vec3(duck_x[0],duck_y[0],duck_z[0]));boat(vec3(bx[0],by[0],bz[0]));relight()
+def create_scene(offset_duck=0,offset_boat=0):
+    scene.force_reset_scene();duck(vec3(duck_x[0],duck_y[0]+offset_duck,duck_z[0]));boat(vec3(bx[0],by[0]+offset_boat,bz[0]));relight()
+def animate():
+    scene.set_camera((-3.168, 0.929, -1.915),(-1.46, 0.2557, -0.876))
+    n_frame = 40
+    for i in range(n_frame):
+        if i == 0:
+            create_scene(0, 0)
+        elif i == 8:
+            create_scene(1, 0)
+        elif i == 16:
+            create_scene(1, -1)
+        elif i == 24:
+            create_scene(0, 0)
+        elif i == 32:
+            create_scene(-1, 1)
+        else:
+            scene.reset_scene()
+            relight()
+        scene.save_screeshot(f"./anim/{i:03d}.png")
+
 create_scene()
 scene.add_text("position offset");scene.add_slider("duck x",duck_x,-64.,64.);scene.add_slider("duck y",duck_y,-64.,64.)
 scene.add_slider("duck z", duck_z,-64.,64.);scene.add_slider("boat x",bx, -64.,64.);scene.add_slider("boat y",by, -64, 64.)
@@ -89,4 +106,6 @@ scene.add_text("direct light");scene.add_slider("direct light x",dir_x, -2., 2. 
 scene.add_slider("direct light y",dir_y, -2., 5. );scene.add_slider("direct light z",dir_z, -2., 2. )
 scene.add_callback_button("re-light / re-wave", relight, ())
 scene.add_callback_button("reset scene", create_scene, ())
+scene.display_camera_info()
+# animate()
 scene.finish()

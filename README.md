@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-<img src="v1.gif" width="75%"></img>
+<img src="v2.gif" width="75%"></img>
 </p>
 
 > Figure: result of `python3 example6.py`. Please replace the image above (`demo.jpg`) with yours, so that other people can immediately see your results :-)
