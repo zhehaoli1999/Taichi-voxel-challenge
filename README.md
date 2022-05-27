@@ -1,22 +1,24 @@
 # <a name="title">Taichi Voxel Challenge</a>: Tiny White Boat & Giant Yellow Duck 
 
+> Figure: result of `main.py`. 
 <p align="center">
 <img src="demo.jpg" width="75%"></img>
 </p>
 
-> Figure: result of `main.py`. 
 
+> Figure: animation result of `rubberduck.py`. 
 <p align="center">
 <img src="./results/v2.gif" width="75%"></img>
 </p>
 
-> Figure: animation result of `rubberduck.py`. 
 
+> Figure: a 360-degree animation result of `rubberduck.py`. 
 <p align="center">
 <img src="./results/360anim.gif" width="75%"></img>
 </p>
 
-> Figure: a 360-degree animation result of `rubberduck.py`. 
+
+### Blog (In Chinese 中文)：https://zhuanlan.zhihu.com/p/516533880
 
 ## My API Extension 
 You can find the use of these extensional APIs in [rubberduck.py](./rubberduck.py) 
@@ -24,6 +26,8 @@ You can find the use of these extensional APIs in [rubberduck.py](./rubberduck.p
 **Use right mouse button to rotate view**
 
 ### 1. GUI Widgets 
+
+![](https://user-images.githubusercontent.com/47491676/169638166-59613836-35c9-44cd-8e1d-1891a13be769.png)
 
 + `sene.add_text(your_text)`
     ```py
