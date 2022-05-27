@@ -77,9 +77,10 @@ You can find the use of these extensional APIs in [rubberduck.py](./rubberduck.p
   
   Clear all voxels. 
 
-+ `scene.set_camera(cam_pos, lookat)`
+### 3. Camera, Screeshot, etc.
 
-### 3. Other Utilities (Animation Tools.etc)
++ `scene.set_camera(cam_pos, lookat)`
++ 
 + `scene.save_screeshot(path)`
   ```py
   scene.save_screeshot(f"./rot_anim/{i:03d}.png")
