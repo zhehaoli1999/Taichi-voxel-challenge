@@ -18,7 +18,7 @@
 
 > Figure: a 360-degree animation result of `rubberduck.py`. 
 
-## API Extension 
+## My API Extension 
 You can find the use of these extensional APIs in [rubberduck.py](./rubberduck.py) 
 
 **Use right mouse button to rotate view**
@@ -111,7 +111,7 @@ def animate():
             relight()
         scene.save_screeshot(f"./anim/{i:03d}.png")
 ```
-### A 360-degree Animation
+### 2. A 360-degree Animation
 
 ![](./results/360anim.gif)
 ```py
