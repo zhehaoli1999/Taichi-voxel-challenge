@@ -82,6 +82,10 @@ You can find the use of this extensional APIs in [rubberduck.py](./rubberduck.py
   ```
 ## How to create animation or 360-degree animation
 
+First, generate a sequence of images, then use `ti video -f your_framerate` to generate video. 
+
+Here I introduce how to generate images. 
+
 ### 1. A simple fixed-view animation 
 
 ![](./results/v2.gif)
