@@ -122,6 +122,7 @@ def rot360_animate():
         scene.save_screeshot(f"./rot_anim2/{i:03d}.png")
 
 create_scene()
+scene.add_text("Use right mouse button to rotate view")
 scene.add_text("position offset")
 scene.add_slider("duck x",duck_x,-64.,64.)
 scene.add_slider("duck y",duck_y,-64.,64.)

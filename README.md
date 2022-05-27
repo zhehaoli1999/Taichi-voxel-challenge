@@ -21,7 +21,7 @@
 ## API Extension 
 You can find the use of these extensional APIs in [rubberduck.py](./rubberduck.py) 
 
-**Use right mouse button to roate view**
+**Use right mouse button to rotate view**
 
 ### 1. GUI Widgets 
 
