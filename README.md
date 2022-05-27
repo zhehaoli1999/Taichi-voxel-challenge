@@ -77,7 +77,7 @@ You can find the use of these extensional APIs in [rubberduck.py](./rubberduck.p
   
   Clear all voxels. 
 
-### 3. Camera, Screeshot, etc.
+### 3. Camera, Screenshot, etc.
 
 + `scene.set_camera(cam_pos, lookat)`
 + 
