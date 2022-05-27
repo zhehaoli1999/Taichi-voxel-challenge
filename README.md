@@ -19,7 +19,7 @@
 > Figure: a 360-degree animation result of `rubberduck.py`. 
 
 ## API Extension 
-You can find the use of this extensional APIs in [rubberduck.py](./rubberduck.py) 
+You can find the use of these extensional APIs in [rubberduck.py](./rubberduck.py) 
 
 **Use right mouse button to roate view**
 
