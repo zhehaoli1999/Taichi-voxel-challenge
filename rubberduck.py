@@ -3,7 +3,8 @@ import taichi as ti
 from taichi.math import *
 scene = Scene(voxel_edges=0.01, exposure=1)
 scene.set_floor(-64, (1,1,1)) 
-scene.set_background_color((135/255.,206/255.,235/255.)) # sky 
+sky_col = [(135,206,235)] 
+scene.set_background_color(sky_col[0]) # sky 
 @ti.func
 def rgb(r,g,b):
     return vec3(r/255.0, g/255.0, b/255.0)
@@ -74,10 +75,11 @@ dir_x = [-0.5];dir_y = [1.78];dir_z = [-1.26]
 duck_x=[15.];duck_y=[-12.];duck_z=[11.2]
 bx=[20.];by=[0.];bz=[0.] # boat 
 prob= [1.0];scale=[0.002];r_boat=[15.4]
-def relight():
+def relight(sky_col):
+    scene.set_background_color(sky_col[0])
     scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1));sea(duck_z[0],prob[0],scale[0],r_boat[0])
 def create_scene(offset_duck=0,offset_boat=0):
-    scene.reset_all_scene();duck(vec3(duck_x[0],duck_y[0]+offset_duck,duck_z[0]));boat(vec3(bx[0],by[0]+offset_boat,bz[0]));relight()
+    scene.reset_all_scene();duck(vec3(duck_x[0],duck_y[0]+offset_duck,duck_z[0]));boat(vec3(bx[0],by[0]+offset_boat,bz[0]));relight(sky_col)
 
 def animate():
     scene.set_camera((-3.168, 0.929, -1.915),(-1.46, 0.2557, -0.876))
@@ -120,17 +122,32 @@ def rot360_animate():
         scene.save_screeshot(f"./rot_anim2/{i:03d}.png")
 
 create_scene()
-scene.add_text("position offset");scene.add_slider("duck x",duck_x,-64.,64.);scene.add_slider("duck y",duck_y,-64.,64.)
-scene.add_slider("duck z", duck_z,-64.,64.);scene.add_slider("boat x",bx, -64.,64.);scene.add_slider("boat y",by, -64, 64.)
-scene.add_slider("boat z",bz, -64, 64);scene.add_text("wave");scene.add_slider("prob",prob,0.,1.)
-scene.add_slider("scale",scale,0.,0.005);scene.add_slider("r boat", r_boat, 0., 30)
-scene.add_text("direct light");scene.add_slider("direct light x",dir_x, -2., 2. )
-scene.add_slider("direct light y",dir_y, -2., 5. );scene.add_slider("direct light z",dir_z, -2., 2. )
-scene.add_callback_button("re-light / re-wave", relight, ())
+scene.add_text("position offset")
+scene.add_slider("duck x",duck_x,-64.,64.)
+scene.add_slider("duck y",duck_y,-64.,64.)
+scene.add_slider("duck z", duck_z,-64.,64.)
+scene.add_slider("boat x",bx, -64.,64.)
+scene.add_slider("boat y",by, -64, 64.)
+scene.add_slider("boat z",bz, -64, 64)
+
+scene.add_text("wave")
+scene.add_slider("prob",prob,0.,1.)
+scene.add_slider("scale",scale,0.,0.005)
+scene.add_slider("r boat", r_boat, 0., 30)
+
+scene.add_text("direct light")
+scene.add_slider("direct light x",dir_x, -2., 2. )
+scene.add_slider("direct light y",dir_y, -2., 5. )
+scene.add_slider("direct light z",dir_z, -2., 2. )
+
+scene.add_color_picker("sky color", sky_col)
+
+scene.add_callback_button("re-light / re-wave", relight, (sky_col,))
 scene.add_callback_button("reset scene", create_scene, ())
 scene.display_camera_info()
-# animate()
-scene.finish()
 
-rot360_animate()
+#animate()
+
+# rot360_animate()
+
 scene.finish()

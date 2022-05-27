@@ -19,6 +19,9 @@
 > Figure: a 360-degree animation result of `rubberduck.py`. 
 
 ## API Extension 
+You can find the use of this extensional APIs in [rubberduck.py](./rubberduck.py) 
+
+**Use right mouse button to roate view**
 
 ### 1. GUI Widgets 
 
@@ -40,13 +43,13 @@
 
   Use list to pass reference of ``var``. 
   ```py
-  scene.add_text("direct light")
+  sky_col = [(135,206,235)] 
+  scene.add_color_picker("sky color", sky_col)
   ```
 
 + `scene.add_callback_button(name_of_callback, callback_func, callback_args_ref)`
   ```py
-  scene.add_callback_button("re-light / re-wave", relight, ())
-
+  scene.add_callback_button("re-light / re-wave", relight, (sky_col,))
   scene.add_callback_button("reset scene", create_scene, ())
   ```
   

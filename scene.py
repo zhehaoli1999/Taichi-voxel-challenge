@@ -45,7 +45,7 @@ class Camera:
 
     def _update_by_mouse(self):
         win = self._window
-        if not self.mouse_exclusive_owner or not win.is_pressed(ti.ui.LMB):
+        if not self.mouse_exclusive_owner or not win.is_pressed(ti.ui.RMB):
             self._last_mouse_pos = None
             return False
         mouse_pos = np.array(win.get_cursor_pos())
