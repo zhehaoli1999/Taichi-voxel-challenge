@@ -166,7 +166,7 @@ class Scene:
         self.gui_widget_types.append("slider")
         self.gui_widget_args.append(old_value_ref)
 
-    def add_color_picker(self, old_value_ref:list, text):
+    def add_color_picker(self, text, old_value_ref:list):
         self.gui_widgets.append(partial(self.window.GUI.color_edit_3, text=text)) 
         self.gui_widget_types.append("color")
         self.gui_widget_args.append(old_value_ref)
@@ -181,17 +181,14 @@ class Scene:
         self.gui_widget_types.append("text")    
         self.gui_widget_args.append(None)   
 
-    def reset_scene(self):
-        self.renderer.clear()
+    def reset_part_of_scene(self):
+        self.renderer.clear_part()
     
-    def force_reset_scene(self):
-        self.renderer.force_clear()
+    def reset_all_scene(self):
+        self.renderer.clear_all()
 
     def save_screeshot(self, fname):
         self.renderer.recompute_bbox()
-        self.renderer.set_camera_pos(*self.camera.position)
-        look_at = self.camera.look_at
-        self.renderer.set_look_at(*look_at)
         self.renderer.reset_framebuffer()
         spp = 100
         for _ in range(spp):
@@ -219,7 +216,7 @@ class Scene:
                 if self.gui_widget_types[i] == "button":
                     trigger = self.gui_widgets[i]()
                     if trigger:
-                        self.reset_scene()
+                        self.reset_part_of_scene() # reset here to avoid voxel accumulation
                         # Here self.gui_widget_args[i] =[callback_func, call_back_args_ref]
                         self.gui_widget_args[i][0](*self.gui_widget_args[i][1])
                         self.renderer.reset_framebuffer()

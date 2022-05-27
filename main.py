@@ -79,6 +79,6 @@ prob= [1.0];scale=[0.002];r_boat=[15.4]
 def relight():
     scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1));sea(duck_z[0],prob[0],scale[0],r_boat[0])
 def create_scene():
-    scene.force_reset_scene();duck(vec3(duck_x[0],duck_y[0],duck_z[0]));boat(vec3(bx[0],by[0],bz[0]));relight()
+    scene.reset_all_scene();duck(vec3(duck_x[0],duck_y[0],duck_z[0]));boat(vec3(bx[0],by[0],bz[0]));relight()
 create_scene()
 scene.finish()

@@ -1,4 +1,4 @@
-# <a name="title">Taichi Voxel Challenge</a>
+# <a name="title">Taichi Voxel Challenge</a>: Tiny White Boat & Giant Yellow Duck 
 
 <p align="center">
 <img src="demo.jpg" width="75%"></img>
@@ -7,10 +7,139 @@
 > Figure: result of `main.py`. 
 
 <p align="center">
-<img src="v2.gif" width="75%"></img>
+<img src="./results/v2.gif" width="75%"></img>
 </p>
 
 > Figure: animation result of `rubberduck.py`. 
+
+<p align="center">
+<img src="./results/360anim.gif" width="75%"></img>
+</p>
+
+> Figure: a 360-degree animation result of `rubberduck.py`. 
+
+## API Extension 
+
+### 1. GUI Widgets 
+
++ `sene.add_text(your_text)`
+    ```py
+    scene.add_text("direct light")
+    ```
+
++ `scene.add_slider(name_of_slider, var, range_min, range_max)`
+  
+  Use list to pass reference of ``var``. 
+  ```py
+  duck_z=[11.2]
+  scene.add_slider("duck z", duck_z,-64.,64.)
+  ```
+  
+
++ `scene.add_color_picker(name_of_color_picker, var)`
+
+  Use list to pass reference of ``var``. 
+  ```py
+  scene.add_text("direct light")
+  ```
+
++ `scene.add_callback_button(name_of_callback, callback_func, callback_args_ref)`
+  ```py
+  scene.add_callback_button("re-light / re-wave", relight, ())
+
+  scene.add_callback_button("reset scene", create_scene, ())
+  ```
+  
++ `scene.display_camera_info()`
+
+### 2. Scene Management 
++ `scene.reset_part_of_scene`
+  
+  Clear the voxels with "resetable" attributes equal to 1. 
+  
+  **Reason to add this api** is that the creation of duck and boat in the scene is time-consuming, while the creation of wave and splash requires little time. 
+  
+  So to adjust the appearence of waves for debugging, we only need to reset the voxels of waves, where we can set the voxels of waves as "resetable = 1", while the voxels of duck and boat as "resetable = 0". 
+
+  You can set this attribute in ``set_voxel``
+  ```py
+  (method) set_voxel: (idx: Any, mat: Any, color: Any, resetable: int = 1) -> None
+  ```
+
++ `scene.reset_all_scene`
+  
+  Clear all voxels. 
+
++ `scene.set_camera(cam_pos, lookat)`
+
+### 3. Other Utilities (Animation Tools.etc)
++ `scene.save_screeshot(path)`
+  ```py
+  scene.save_screeshot(f"./rot_anim/{i:03d}.png")
+  ```
+## How to create animation or 360-degree animation
+
+### 1. A simple fixed-view animation 
+
+![](./results/v2.gif)
+
+```py
+def animate():
+    scene.set_camera((-3.168, 0.929, -1.915),(-1.46, 0.2557, -0.876))
+    n_frame = 40
+    for i in range(n_frame):
+        if i == 0:
+            # arguments are the y-axis offset of duck & boat
+            create_scene(0, 0) 
+        elif i == 8:
+            create_scene(1, 0)
+        elif i == 16:
+            create_scene(1, -1)
+        elif i == 24:
+            create_scene(0, 0)
+        elif i == 32:
+            create_scene(-1, 1)
+        else:
+            scene.reset_part_of_scene()
+            relight()
+        scene.save_screeshot(f"./anim/{i:03d}.png")
+```
+### A 360-degree Animation
+
+![](./results/360anim.gif)
+```py
+import numpy as np 
+from numpy.linalg import norm
+def rot360_animate():
+    #####################
+    # replace with your create scene code / function 
+    create_scene(0, 0) 
+    #####################
+    
+    lookat = (0, -0.3, 0)
+    init_pos = (-3.168, 0.929, -1.915)
+    rot_center = (lookat[0], init_pos[1], lookat[2])
+    radius = norm(np.array(init_pos) - np.array(rot_center))
+
+    n_frame = 100
+    for i in range(n_frame):
+        theta = (2 * np.pi / n_frame) * i
+        cam_pos = np.array(rot_center) + radius * np.array([np.sin(theta), 0., np.cos(theta)])
+        print(f"cam_pos = {cam_pos}")
+        scene.set_camera(cam_pos, lookat)
+        
+        #############################
+        # or scene.reset_all_scene() then create new scene based on your need
+        scene.reset_part_of_scene()
+        relight()
+        #############################
+
+        scene.save_screeshot(f"./rot_anim/{i:03d}.png")
+
+```
+
+
+---
 
 We invite you to create your voxel artwork, by putting your [Taichi](https://github.com/taichi-dev/taichi) code in `main.py`!
 

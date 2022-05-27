@@ -51,10 +51,10 @@ def boat(dv:ti.template()):
 def sea(duck_z:ti.f32, prob:ti.f32, scale:ti.f32,r_boat:ti.f32): # i: left/right wing,  j: head/tail
     for i, h, j in ti.ndrange((-64, 64), (-64, -40), (-64, 64)):
         scene.set_voxel(vec3(i, h, j), 1, rgb(85+2*h,205+2*h,255)) # sea base 
-    for i, h, j in ti.ndrange((-15, 62), (-40, -38), (-17+duck_z-36, 64)):
+    for i, h, j in ti.ndrange((-15, 59), (-40, -38), (-17+duck_z-36, 64)):
         if scene.get_voxel(vec3(i, h, j))[0]==0:
             if j < 0:
-                t = (vec2(i, j) - vec2(20,-17+duck_z));r = 34
+                t = (vec2(i, j) - vec2(20,-15+duck_z));r = 37
                 if t.dot(t) < r**2 and ti.random(float) > 0.9:                
                     scene.set_voxel(vec3(i, h, j), 2, rgb(255,255,255)) # wave
             elif ti.random(float) > prob - scale * abs(i-20):
@@ -77,7 +77,8 @@ prob= [1.0];scale=[0.002];r_boat=[15.4]
 def relight():
     scene.set_directional_light([dir_x[0], dir_y[0], dir_z[0]], 0.0, (1, 1, 1));sea(duck_z[0],prob[0],scale[0],r_boat[0])
 def create_scene(offset_duck=0,offset_boat=0):
-    scene.force_reset_scene();duck(vec3(duck_x[0],duck_y[0]+offset_duck,duck_z[0]));boat(vec3(bx[0],by[0]+offset_boat,bz[0]));relight()
+    scene.reset_all_scene();duck(vec3(duck_x[0],duck_y[0]+offset_duck,duck_z[0]));boat(vec3(bx[0],by[0]+offset_boat,bz[0]));relight()
+
 def animate():
     scene.set_camera((-3.168, 0.929, -1.915),(-1.46, 0.2557, -0.876))
     n_frame = 40
@@ -93,9 +94,30 @@ def animate():
         elif i == 32:
             create_scene(-1, 1)
         else:
-            scene.reset_scene()
+            scene.reset_part_of_scene()
             relight()
         scene.save_screeshot(f"./anim/{i:03d}.png")
+
+import numpy as np 
+from numpy.linalg import norm
+def rot360_animate():
+    create_scene(0, 0) # replace with your create scene code / function 
+    
+    lookat = (0, -0.3, 0)
+    init_pos = (-3.168, 0.929, -1.915)
+    rot_center = (lookat[0], init_pos[1], lookat[2])
+    radius = norm(np.array(init_pos) - np.array(rot_center))
+
+    n_frame = 100
+    for i in range(n_frame):
+        theta = (2 * np.pi / n_frame) * i
+        cam_pos = np.array(rot_center) + radius * np.array([np.sin(theta), 0., np.cos(theta)])
+        print(f"cam_pos = {cam_pos}")
+        scene.set_camera(cam_pos, lookat)
+        scene.reset_part_of_scene()
+        relight()
+
+        scene.save_screeshot(f"./rot_anim2/{i:03d}.png")
 
 create_scene()
 scene.add_text("position offset");scene.add_slider("duck x",duck_x,-64.,64.);scene.add_slider("duck y",duck_y,-64.,64.)
@@ -108,4 +130,7 @@ scene.add_callback_button("re-light / re-wave", relight, ())
 scene.add_callback_button("reset scene", create_scene, ())
 scene.display_camera_info()
 # animate()
+scene.finish()
+
+rot360_animate()
 scene.finish()

@@ -380,14 +380,14 @@ class Renderer:
         self.voxel_resetable[idx] = ti.cast(resetable, ti.i8)
     
     @ti.kernel
-    def clear(self):
+    def clear_part(self):
         for idx in ti.grouped(ti.ndrange(128,128,128)):
             if self.voxel_resetable[idx] == 1:
                 self.voxel_material[idx] = ti.cast(0, ti.i8)
                 self.voxel_color[idx] = self.to_vec3u(ti.Vector([0., 0.,0.]))
     
     @ti.kernel
-    def force_clear(self):
+    def clear_all(self):
         for idx in ti.grouped(ti.ndrange(128,128,128)):
             self.voxel_material[idx] = ti.cast(0, ti.i8)
             self.voxel_color[idx] = self.to_vec3u(ti.Vector([0., 0.,0.]))
