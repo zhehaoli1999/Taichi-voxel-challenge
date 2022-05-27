@@ -80,7 +80,7 @@ You can find the use of these extensional APIs in [rubberduck.py](./rubberduck.p
 ### 3. Camera, Screenshot, etc.
 
 + `scene.set_camera(cam_pos, lookat)`
-+ 
+  
 + `scene.save_screeshot(path)`
   ```py
   scene.save_screeshot(f"./rot_anim/{i:03d}.png")
