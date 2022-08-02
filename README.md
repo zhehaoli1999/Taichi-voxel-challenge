@@ -1,4 +1,5 @@
 # <a name="title">Taichi Voxel Challenge</a>: Tiny White Boat & Giant Yellow Duck 
+## (Win "Committee's Pick" award in Taichi Voxel Challange 2022, 5 / 111)
 
 > Figure: result of `main.py`. 
 <p align="center">
